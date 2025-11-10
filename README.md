@@ -8,7 +8,7 @@
 ## 📖 Visão Geral do Projeto
 
 O **CoreMonitor** é um **sistema Contábil-Financeiro integrado com IoT (Internet das Coisas)**, desenvolvido para empresas que operam dispositivos conectados.  
-A solução centraliza **lançamentos contábeis e financeiros** — como vendas, despesas e custos — e fornece **uma visão consolidada e inteligente do desempenho econômico**, integrando **dados operacionais de IoT** e **indicadores financeiros** em um único ambiente.
+A solução centraliza **lançamentos contábeis e financeiros** como vendas, despesas e custos e fornece **uma visão consolidada e inteligente do desempenho econômico**, integrando **dados operacionais de IoT** e **indicadores financeiros** em um único ambiente.
 
 A arquitetura do sistema é baseada em **microsserviços containerizados** desenvolvidos em **.NET + Docker**, conectados a um **banco de dados Oracle**, e expostos por meio de uma **API REST segura**.  
 A experiência do usuário é garantida por um **aplicativo mobile desenvolvido em React Native**, com interface moderna, intuitiva e responsiva.
