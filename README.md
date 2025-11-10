@@ -1,0 +1,2 @@
+# -Disruptive_Architectures_IoT_IoB_GenerativeAI
+Entrega Sprint 3 de Disruptive_Architectures_IoT_IoB_GenerativeAI
