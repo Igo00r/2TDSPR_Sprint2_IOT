@@ -1,0 +1,57 @@
+[
+  {
+    "id": "tab1",
+    "type": "tab",
+    "label": "IoT → Oracle via orm-db (RAW + conexão dinâmica)",
+    "disabled": false,
+    "info": ""
+  },
+  {
+    "id": "mqtt_in",
+    "type": "mqtt in",
+    "z": "tab1",
+    "name": "ESP32 VENDA_EVENTO",
+    "topic": "2TDS/esp32/teste",
+    "qos": "0",
+    "datatype": "auto-detect",
+    "broker": "broker1",
+    "nl": false,
+    "rap": true,
+    "inputs": 0,
+    "x": 160,
+    "y": 120,
+    "wires": [["json_parse", "dbg_rx"]]
+  },
+  {
+    "id": "json_parse",
+    "type": "json",
+    "z": "tab1",
+    "name": "Parse JSON",
+    "property": "payload",
+    "action": "",
+    "pretty": false,
+    "x": 350,
+    "y": 120,
+    "wires": [["normalize"]]
+  },
+  {
+    "id": "normalize",
+    "type": "function",
+    "z": "tab1",
+    "name": "Validar + Normalizar",
+    "func": "// Aceita payload como STRING (JSON) ou OBJETO.\n// Também trata casos em que veio aninhado (msg.payload.payload).\n\nlet p = msg.payload ?? {};\n\nif (typeof p === \"string\") {\n  try {\n    p = JSON.parse(p);\n  } catch (e) {\n    return node.error(\"JSON inválido no payload\", msg);\n  }\n}\n\nif (p && typeof p === \"object\" && p.payload && !p.dispositivoId) {\n  p = p.payload;\n}\n\np.dispositivoId = p.dispositivoId ?? p.deviceId ?? p.dispositivoID;\n\nif (!p.dispositivoId) return node.error(\"dispositivoId ausente\", msg);\nif (!p.servicoCodigo) return node.error(\"servicoCodigo ausente\", msg);\n\np.quantidade = Number(p.quantidade ?? 1);\np.valorUnitario = Number(p.valorUnitario ?? 0);\nif (p.valorTotal === undefined) p.valorTotal = p.quantidade * p.valorUnitario;\n\nmsg.ora = {\n  dispositivoId: String(p.dispositivoId),\n  uid: p.uid ? String(p.uid) : null,\n  servicoCodigo: String(p.servicoCodigo),\n  clienteId: Number(p.clienteId ?? 99999),\n  quantidade: Number(p.quantidade),\n  valorUnitario: Number(p.valorUnitario),\n  valorTotal: Number(p.valorTotal),\n  origem: String(p.origem ?? \"IOT\"),\n  payload_json: JSON.stringify(p)\n};\n\nreturn msg;",
+    "x": 560,
+    "y": 120,
+    "wires": [["build_raw", "dbg_norm"]]
+  },
+  {
+    "id": "build_raw",
+    "type": "function",
+    "z": "tab1",
+    "name": "Monta msg.connection + msg.rawQuery + msg.data",
+    "func": "// Conexão dinâmica exigida pela lib ORM-DB\nmsg.connection = {\n  driver: \"oracle\",\n  host: \"140.238.179.84\",\n  port: \"1521\",\n  username: \"appuser\",\n  password: \"AppPass#2025\",\n  database: \"FREEPDB1\"\n};\n\nmsg.rawQuery = `INSERT INTO venda_evento (\n  id_evento,\n  dispositivo_iot_id_dispositivo,\n  uid_tag,\n  servico_codigo,\n  servico_id_servico,\n  cliente_id_cliente,\n  quantidade,\n  valor_unitario,\n  valor_total,\n  origem,\n  dt_evento,\n  payload_json\n) VALUES (\n  seq_venda_evento.NEXTVAL,\n  (SELECT id_dispositivo FROM dispositivo_iot WHERE nome = :dispositivoId),\n  :uid,\n  :servicoCodigo,\n  (SELECT id_servico FROM servico WHERE UPPER(codigo)=UPPER(:servicoCodigo)),\n  :clienteId,\n  :quantidade,\n  :valorUnitario,\n  :valorTotal,\n  :origem,\n  SYSDATE,\n  :payload_json\n)`;\n\nmsg.data = {\n  dispositivoId: msg.ora.dispositivoId,\n  uid: msg.ora.uid,\n  servicoCodigo: msg.ora.servicoCodigo,\n  clienteId: msg.ora.clienteId,\n  quantidade: msg.ora.quantidade,\n  valorUnitario: msg.ora.valorUnitario,\n  valorTotal: msg.ora.valorTotal,\n  origem: msg.ora.origem,\n  payload_json: msg.ora.payload_json\n};\n\nreturn msg;",
+    "x": 880,
+    "y": 120,
+    "wires": [["orm_raw", "dbg_sql"]]
+  }
+]
